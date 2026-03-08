@@ -1,6 +1,6 @@
 import { WhoopData, RecoveryData, SleepData, CycleData, Workout, BodyMeasurement, UserProfile } from "@/types/whoop";
 
-const BASE_URL = "https://api.prod.whoop.com/developer/v1";
+const BASE_URL = "https://api.prod.whoop.com/developer/v2";
 const TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token";
 
 interface TokenResponse {
@@ -9,7 +9,39 @@ interface TokenResponse {
   expires_in: number;
 }
 
-// Refresh the access token using the stored refresh token
+// Persist the new refresh token to Vercel env vars via their API
+async function persistRefreshToken(newToken: string) {
+  const vercelToken = process.env.VERCEL_API_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  const teamId = process.env.VERCEL_TEAM_ID;
+  if (!vercelToken || !projectId) return;
+
+  try {
+    // Get existing env var ID
+    const listUrl = `https://api.vercel.com/v9/projects/${projectId}/env${teamId ? `?teamId=${teamId}` : ""}`;
+    const listRes = await fetch(listUrl, {
+      headers: { Authorization: `Bearer ${vercelToken}` },
+    });
+    const envVars = await listRes.json();
+    const existing = envVars.envs?.find((e: { key: string }) => e.key === "WHOOP_REFRESH_TOKEN");
+
+    if (existing) {
+      // Update existing
+      const updateUrl = `https://api.vercel.com/v9/projects/${projectId}/env/${existing.id}${teamId ? `?teamId=${teamId}` : ""}`;
+      await fetch(updateUrl, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${vercelToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value: newToken }),
+      });
+    }
+  } catch (e) {
+    console.error("Failed to persist refresh token:", e);
+  }
+}
+
 async function refreshAccessToken(): Promise<TokenResponse> {
   const res = await fetch(TOKEN_URL, {
     method: "POST",
@@ -27,7 +59,15 @@ async function refreshAccessToken(): Promise<TokenResponse> {
     throw new Error(`Token refresh failed (${res.status}): ${text}`);
   }
 
-  return res.json();
+  const tokens: TokenResponse = await res.json();
+
+  // Whoop rotates refresh tokens — persist the new one
+  if (tokens.refresh_token !== process.env.WHOOP_REFRESH_TOKEN) {
+    process.env.WHOOP_REFRESH_TOKEN = tokens.refresh_token;
+    await persistRefreshToken(tokens.refresh_token);
+  }
+
+  return tokens;
 }
 
 async function whoopFetch(path: string, accessToken: string, params?: Record<string, string>) {
@@ -38,7 +78,7 @@ async function whoopFetch(path: string, accessToken: string, params?: Record<str
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${accessToken}` },
-    next: { revalidate: 300 }, // cache for 5 minutes
+    next: { revalidate: 300 },
   });
 
   if (!res.ok) {
@@ -57,31 +97,27 @@ export async function fetchWhoopData(): Promise<WhoopData> {
   const tokens = await refreshAccessToken();
   const token = tokens.access_token;
 
-  // Fetch all endpoints in parallel
   const [profileRes, bodyRes, recoveryRes, sleepRes, cycleRes, workoutRes] = await Promise.all([
     whoopFetch("/user/profile/basic", token).catch(() => null),
     whoopFetch("/user/measurement/body", token).catch(() => null),
-    whoopFetch("/recovery", token, { limit: "7" }),
-    whoopFetch("/activity/sleep", token, { limit: "7" }),
-    whoopFetch("/cycle", token, { limit: "1" }),
-    whoopFetch("/activity/workout", token, { limit: "10" }),
+    whoopFetch("/recovery", token, { limit: "7" }).catch(() => ({ records: [] })),
+    whoopFetch("/activity/sleep", token, { limit: "7" }).catch(() => ({ records: [] })),
+    whoopFetch("/cycle", token, { limit: "1" }).catch(() => ({ records: [] })),
+    whoopFetch("/activity/workout", token, { limit: "10" }).catch(() => ({ records: [] })),
   ]);
 
-  // Parse profile
   const profile: UserProfile | null = profileRes ? {
     firstName: profileRes.first_name,
     lastName: profileRes.last_name,
     email: profileRes.email,
   } : null;
 
-  // Parse body
   const body: BodyMeasurement | null = bodyRes ? {
     heightMeters: bodyRes.height_meter,
     weightKg: bodyRes.weight_kilogram,
     maxHeartRate: bodyRes.max_heart_rate,
   } : null;
 
-  // Parse recovery (most recent + history)
   const recoveryRecords = recoveryRes.records || [];
   const latestRecovery = recoveryRecords[0];
   const recoveryScore = latestRecovery?.score;
@@ -110,7 +146,6 @@ export async function fetchWhoopData(): Promise<WhoopData> {
     }))
     .reverse();
 
-  // Parse sleep (most recent + history)
   const sleepRecords = sleepRes.records || [];
   const latestSleep = sleepRecords[0];
   const sleepScore = latestSleep?.score;
@@ -155,14 +190,13 @@ export async function fetchWhoopData(): Promise<WhoopData> {
     }))
     .reverse();
 
-  // Parse cycle (current day)
   const cycleRecords = cycleRes.records || [];
   const latestCycle = cycleRecords[0];
   const cycleScore = latestCycle?.score;
 
   const cycle: CycleData = cycleScore ? {
     strain: Math.round(cycleScore.strain * 10) / 10,
-    calories: Math.round(cycleScore.kilojoule * 0.239006), // kJ to kcal
+    calories: Math.round(cycleScore.kilojoule * 0.239006),
     avgHr: cycleScore.average_heart_rate,
     maxHr: cycleScore.max_heart_rate,
     start: latestCycle.start,
@@ -171,7 +205,6 @@ export async function fetchWhoopData(): Promise<WhoopData> {
     strain: 0, calories: 0, avgHr: 0, maxHr: 0, start: "", end: null,
   };
 
-  // Parse workouts
   const workoutRecords = workoutRes.records || [];
   const workouts: Workout[] = workoutRecords
     .filter((w: { score_state: string }) => w.score_state === "SCORED")
@@ -225,12 +258,6 @@ export async function fetchWhoopData(): Promise<WhoopData> {
         } : null,
       };
     });
-
-  // Update the stored refresh token for next time
-  // In production, you'd store this in a database. For now, log it.
-  if (tokens.refresh_token !== process.env.WHOOP_REFRESH_TOKEN) {
-    console.log("New Whoop refresh token received — update WHOOP_REFRESH_TOKEN env var:", tokens.refresh_token);
-  }
 
   return {
     profile,

@@ -36,12 +36,43 @@ export async function GET(request: NextRequest) {
 
   const tokens = await tokenRes.json();
 
-  // Display the tokens — save the refresh_token as WHOOP_REFRESH_TOKEN env var
+  // Auto-persist the refresh token to Vercel env vars
+  const vercelToken = process.env.VERCEL_API_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  const teamId = process.env.VERCEL_TEAM_ID;
+  let persisted = false;
+
+  if (vercelToken && projectId && tokens.refresh_token) {
+    try {
+      const listUrl = `https://api.vercel.com/v9/projects/${projectId}/env${teamId ? `?teamId=${teamId}` : ""}`;
+      const listRes = await fetch(listUrl, {
+        headers: { Authorization: `Bearer ${vercelToken}` },
+      });
+      const envVars = await listRes.json();
+      const existing = envVars.envs?.find((e: { key: string }) => e.key === "WHOOP_REFRESH_TOKEN");
+
+      if (existing) {
+        const updateUrl = `https://api.vercel.com/v9/projects/${projectId}/env/${existing.id}${teamId ? `?teamId=${teamId}` : ""}`;
+        await fetch(updateUrl, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${vercelToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ value: tokens.refresh_token }),
+        });
+        persisted = true;
+      }
+    } catch (e) {
+      console.error("Failed to persist refresh token:", e);
+    }
+  }
+
   return NextResponse.json({
-    message: "Success! Copy the refresh_token below and set it as WHOOP_REFRESH_TOKEN in your Vercel environment variables.",
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_in: tokens.expires_in,
+    message: persisted
+      ? "Success! Refresh token has been automatically saved. Your dashboard is now live."
+      : "Success! Copy the refresh_token below and set it as WHOOP_REFRESH_TOKEN in your Vercel environment variables.",
+    persisted,
     scope: tokens.scope,
   });
 }
