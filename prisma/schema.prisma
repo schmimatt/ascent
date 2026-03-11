@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String    @id @default(uuid())
+  whoopUserId    String    @unique @map("whoop_user_id")
+  email          String?
+  firstName      String?   @map("first_name")
+  lastName       String?   @map("last_name")
+  accessToken    String?   @map("access_token")
+  refreshToken   String?   @map("refresh_token")
+  tokenExpiresAt DateTime? @map("token_expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  teamsCreated    Team[]            @relation("TeamCreator")
+  teamMembers     TeamMember[]
+  recovery        Recovery[]
+  sleep           Sleep[]
+  cycle           Cycle[]
+  workout         Workout[]
+  bodyMeasurement BodyMeasurement[]
+
+  @@map("users")
+}
+
+model Team {
+  id         String   @id @default(uuid())
+  name       String
+  createdBy  String   @map("created_by")
+  inviteCode String   @unique @map("invite_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  creator User         @relation("TeamCreator", fields: [createdBy], references: [id])
+  members TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId   String   @map("team_id")
+  userId   String   @map("user_id")
+  role     String   @default("member")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("team_members")
+}
+
+model Recovery {
+  id              Int      @id @default(autoincrement())
+  userId          String?  @map("user_id")
+  date            DateTime @db.Date
+  score           Int?
+  hrv             Float?   @db.Real
+  rhr             Int?
+  spo2            Float?   @db.Real
+  skinTempCelsius Float?   @map("skin_temp_celsius") @db.Real
+  userCalibrating Boolean  @default(false) @map("user_calibrating")
+  raw             Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("recovery")
+}
+
+model Sleep {
+  id               Int       @id @default(autoincrement())
+  userId           String?   @map("user_id")
+  date             DateTime  @db.Date
+  totalInBedHours  Float?    @map("total_in_bed_hours") @db.Real
+  totalAwakeHours  Float?    @map("total_awake_hours") @db.Real
+  totalLightHours  Float?    @map("total_light_hours") @db.Real
+  totalRemHours    Float?    @map("total_rem_hours") @db.Real
+  totalDeepHours   Float?    @map("total_deep_hours") @db.Real
+  sleepCycleCount  Int?      @map("sleep_cycle_count")
+  disturbanceCount Int?      @map("disturbance_count")
+  efficiency       Float?    @db.Real
+  respiratoryRate  Float?    @map("respiratory_rate") @db.Real
+  sleepPerformance Float?    @map("sleep_performance") @db.Real
+  sleepConsistency Float?    @map("sleep_consistency") @db.Real
+  nap              Boolean   @default(false)
+  startTime        DateTime? @map("start_time")
+  endTime          DateTime? @map("end_time")
+  raw              Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("sleep")
+}
+
+model Cycle {
+  id        Int       @id @default(autoincrement())
+  userId    String?   @map("user_id")
+  date      DateTime  @db.Date
+  strain    Float?    @db.Real
+  calories  Int?
+  avgHr     Int?      @map("avg_hr")
+  maxHr     Int?      @map("max_hr")
+  startTime DateTime? @map("start_time")
+  endTime   DateTime? @map("end_time")
+  raw       Json?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("cycle")
+}
+
+model Workout {
+  id                 Int       @id @default(autoincrement())
+  userId             String?   @map("user_id")
+  whoopId            String?   @unique @map("whoop_id")
+  date               DateTime  @db.Date
+  sport              String?
+  strain             Float?    @db.Real
+  avgHr              Int?      @map("avg_hr")
+  maxHr              Int?      @map("max_hr")
+  calories           Int?
+  durationMinutes    Int?      @map("duration_minutes")
+  distanceMeters     Float?    @map("distance_meters") @db.Real
+  altitudeGainMeters Float?    @map("altitude_gain_meters") @db.Real
+  zones              Json?
+  startTime          DateTime? @map("start_time")
+  endTime            DateTime? @map("end_time")
+  raw                Json?
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("workout")
+}
+
+model BodyMeasurement {
+  id           Int      @id @default(autoincrement())
+  userId       String?  @map("user_id")
+  date         DateTime @db.Date
+  heightMeters Float?   @map("height_meters") @db.Real
+  weightKg     Float?   @map("weight_kg") @db.Real
+  maxHeartRate Int?     @map("max_heart_rate")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("body_measurement")
+}
+
+model SyncLog {
+  id            Int      @id @default(autoincrement())
+  syncedAt      DateTime @default(now()) @map("synced_at")
+  recordsSynced Int      @default(0) @map("records_synced")
+  error         String?
+
+  @@map("sync_log")
+}

@@ -24,7 +24,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
             Privacy Policy
           </h1>
-          <p className="text-sm text-muted mb-12">Last updated: March 8, 2026</p>
+          <p className="text-sm text-muted mb-12">Last updated: March 11, 2026</p>
 
           <div className="space-y-8 text-muted leading-relaxed">
             <section>
@@ -41,7 +41,7 @@ export default function PrivacyPage() {
               <h2 className="text-lg font-semibold text-foreground mb-3">Data We Access</h2>
               <p className="mb-3">
                 Ascent connects to the Whoop API using OAuth 2.0 to access the following
-                data from the site owner&apos;s Whoop account only:
+                data from each user&apos;s Whoop account:
               </p>
               <ul className="list-disc list-inside space-y-1">
                 <li>Profile information (name)</li>
@@ -56,31 +56,31 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-lg font-semibold text-foreground mb-3">How Data Is Used</h2>
               <ul className="list-disc list-inside space-y-1">
-                <li>Health data is displayed publicly on this dashboard for personal/portfolio purposes.</li>
-                <li>Data is fetched from the Whoop API on each page load and cached for up to 5 minutes.</li>
-                <li>No health data is stored in a database or persisted beyond the server cache.</li>
+                <li>The public dashboard displays the site owner&apos;s health data for personal/portfolio purposes.</li>
+                <li>Signed-in users can create or join teams (2-8 people) to compare Whoop data with others.</li>
+                <li>Health data is synced daily from the Whoop API and stored in a secure database.</li>
+                <li>Team data is only visible to members of that team.</li>
                 <li>No health data is shared with third parties, sold, or used for advertising.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-foreground mb-3">Accounts &amp; Authentication</h2>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Sign in uses Whoop OAuth 2.0 — no passwords are stored.</li>
+                <li>A session cookie (<code>ascent_session</code>) is set for 30 days to keep you signed in.</li>
+                <li>OAuth tokens are stored securely in the database, never exposed to the browser.</li>
+                <li>You can sign out at any time, which clears your session cookie.</li>
               </ul>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold text-foreground mb-3">Data We Do Not Collect</h2>
               <ul className="list-disc list-inside space-y-1">
-                <li>We do not collect any data from visitors to this site.</li>
-                <li>We do not use cookies, analytics, or tracking scripts.</li>
-                <li>We do not access any Whoop account other than the site owner&apos;s.</li>
+                <li>We do not use analytics or tracking scripts.</li>
                 <li>We do not store Whoop credentials on the client side.</li>
+                <li>We do not share data between teams or with external services.</li>
               </ul>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Authentication</h2>
-              <p>
-                Whoop API access is authenticated via OAuth 2.0. Access tokens are
-                short-lived (1 hour) and refresh tokens are stored securely as server-side
-                environment variables. No authentication credentials are exposed to the
-                browser or any client-side code.
-              </p>
             </section>
 
             <section>
@@ -94,9 +94,9 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-lg font-semibold text-foreground mb-3">Data Retention</h2>
               <p>
-                No health data is permanently stored. Data is fetched in real-time from the
-                Whoop API and cached in server memory for up to 5 minutes. When the cache
-                expires, fresh data is fetched from Whoop.
+                Health data is stored in a secure PostgreSQL database (Neon) to enable
+                team comparisons and historical trends. You can leave a team at any time.
+                Contact us to request deletion of your account and associated data.
               </p>
             </section>
 

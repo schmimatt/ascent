@@ -1,4 +1,5 @@
 import WhoopDashboard from "@/components/WhoopDashboard";
+import AuthButton from "@/components/AuthButton";
 
 export default function Home() {
   return (
@@ -10,6 +11,9 @@ export default function Home() {
             Ascent
           </a>
           <div className="flex items-center gap-6">
+            <a href="/teams" className="text-xs text-muted hover:text-foreground transition-colors">
+              Teams
+            </a>
             <a href="/privacy" className="text-xs text-muted hover:text-foreground transition-colors">
               Privacy
             </a>
@@ -19,6 +23,7 @@ export default function Home() {
             >
               matthewjamesschmidt.com
             </a>
+            <AuthButton />
           </div>
         </div>
       </nav>
