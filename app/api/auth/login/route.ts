@@ -4,11 +4,14 @@ export async function GET(request: NextRequest) {
   const invite = request.nextUrl.searchParams.get("invite");
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://ascent.matthewjamesschmidt.com";
 
+  const state = crypto.randomUUID();
+
   const params = new URLSearchParams({
     client_id: process.env.WHOOP_CLIENT_ID!,
     response_type: "code",
     redirect_uri: `${baseUrl}/api/whoop/callback`,
     scope: "read:recovery read:sleep read:workout read:cycles read:profile read:body_measurement",
+    state,
   });
 
   const response = NextResponse.redirect(
