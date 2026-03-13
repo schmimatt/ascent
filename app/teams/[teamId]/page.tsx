@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import TeamCompare from "@/components/TeamCompare";
+import { ArrowLeft, Copy, Check, Users, Trash2, LogOut, Link2 } from "lucide-react";
 
 interface TeamDetails {
   id: string;
@@ -67,7 +74,7 @@ export default function TeamPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-6 h-6 border-2 border-accent-start border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -81,11 +88,11 @@ export default function TeamPage() {
           <Link href="/" className="text-lg font-semibold tracking-tight gradient-text">
             Ascent
           </Link>
-          <div className="flex items-center gap-6">
-            <Link href="/teams" className="text-xs text-muted hover:text-foreground transition-colors">
+          <div className="flex items-center gap-4">
+            <Link href="/teams" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Teams
             </Link>
-            <a href="/api/auth/logout" className="text-xs text-muted hover:text-foreground transition-colors">
+            <a href="/api/auth/logout" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
               Sign out
             </a>
           </div>
@@ -95,76 +102,88 @@ export default function TeamPage() {
       <main className="pt-24 pb-16">
         <div className="mx-auto max-w-6xl px-6">
           {/* Team header */}
-          <div className="flex items-start justify-between mb-8">
+          <div className="flex items-start justify-between mb-6">
             <div>
-              <Link href="/teams" className="text-xs text-muted hover:text-foreground transition-colors mb-2 inline-block">
-                &larr; All Teams
+              <Link href="/teams" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 text-muted-foreground")}>
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                All Teams
               </Link>
               <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
-              <p className="text-sm text-muted mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {members.length} member{members.length !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowInvite(!showInvite)}
-                className="px-3 py-1.5 rounded-lg bg-accent-start/20 text-accent-start text-xs font-medium hover:bg-accent-start/30 transition-colors"
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowInvite(!showInvite)}>
+                <Link2 className="h-4 w-4 mr-1" />
                 Invite
-              </button>
+              </Button>
               {role === "owner" ? (
-                <button
-                  onClick={deleteTeam}
-                  className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
-                >
+                <Button variant="destructive" size="sm" onClick={deleteTeam}>
+                  <Trash2 className="h-4 w-4 mr-1" />
                   Delete
-                </button>
+                </Button>
               ) : (
-                <button
-                  onClick={leaveTeam}
-                  className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
-                >
+                <Button variant="destructive" size="sm" onClick={leaveTeam}>
+                  <LogOut className="h-4 w-4 mr-1" />
                   Leave
-                </button>
+                </Button>
               )}
             </div>
           </div>
 
           {/* Invite panel */}
           {showInvite && (
-            <div className="rounded-2xl bg-card border border-border p-5 mb-6">
-              <p className="text-xs uppercase tracking-wider text-muted mb-2">Invite Link</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono truncate">
-                  {typeof window !== "undefined" ? window.location.origin : ""}/api/auth/login?invite={team.invite_code}
-                </code>
-                <button
-                  onClick={copyInviteLink}
-                  className="px-3 py-2 rounded-lg bg-accent-start/20 text-accent-start text-xs font-medium hover:bg-accent-start/30 transition-colors whitespace-nowrap"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
-              <p className="text-[10px] text-muted mt-2">
-                Share this link. New users will sign in with Whoop and auto-join this team.
-              </p>
-            </div>
+            <Card className="mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Invite Link</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={typeof window !== "undefined" ? `${window.location.origin}/api/auth/login?invite=${team.invite_code}` : ""}
+                    className="font-mono text-xs"
+                  />
+                  <Button variant="outline" size="sm" onClick={copyInviteLink}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Share this link. New users will sign in with Whoop and auto-join this team.
+                </p>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Members list */}
-          <div className="rounded-2xl bg-card border border-border p-5 mb-6">
-            <p className="text-xs uppercase tracking-wider text-muted mb-3">Members</p>
-            <div className="space-y-2">
-              {members.map(m => (
-                <div key={m.id} className="flex items-center justify-between py-1">
-                  <span className="text-sm font-medium">
-                    {m.first_name} {m.last_name?.charAt(0)}.
-                  </span>
-                  <span className="text-[10px] text-muted uppercase tracking-wider">{m.role}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Members */}
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {members.map(m => (
+                  <div key={m.id} className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                        {m.first_name?.charAt(0)}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {m.first_name} {m.last_name?.charAt(0)}.
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="text-[10px]">{m.role}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator className="my-6" />
 
           {/* Comparison dashboard */}
           <TeamCompare teamId={teamId} />

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface SessionInfo {
   firstName: string;
@@ -26,13 +28,10 @@ export default function AuthButton() {
   if (session) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted">
+        <span className="text-xs text-muted-foreground">
           {session.firstName} {session.lastName?.charAt(0)}.
         </span>
-        <a
-          href="/api/auth/logout"
-          className="text-xs text-muted hover:text-foreground transition-colors"
-        >
+        <a href="/api/auth/logout" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
           Sign out
         </a>
       </div>
@@ -40,10 +39,7 @@ export default function AuthButton() {
   }
 
   return (
-    <a
-      href="/api/auth/login"
-      className="text-xs px-3 py-1.5 rounded-lg bg-accent-start/20 text-accent-start hover:bg-accent-start/30 transition-colors"
-    >
+    <a href="/api/auth/login" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
       Sign in with Whoop
     </a>
   );
