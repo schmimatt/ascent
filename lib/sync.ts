@@ -101,6 +101,7 @@ export async function syncUserData(
 ): Promise<{ synced: number; errors: string[] }> {
   let synced = 0;
   const errors: string[] = [];
+  let got401 = false;
 
   const params: Record<string, string> = {};
   if (!fullSync) {
@@ -143,7 +144,14 @@ export async function syncUserData(
       synced++;
     }
   } catch (e) {
-    errors.push(`recovery: ${e instanceof Error ? e.message : String(e)}`);
+    const msg = e instanceof Error ? e.message : String(e);
+    errors.push(`recovery: ${msg}`);
+    if (msg.includes("(401)")) got401 = true;
+  }
+
+  if (got401) {
+    errors.push("Skipping remaining endpoints — access token is invalid");
+    return { synced, errors };
   }
 
   // Sync sleep
@@ -294,21 +302,51 @@ export async function syncUserData(
 // Sync all users in the database
 export async function syncAllUsers(fullSync = false): Promise<{ synced: number; errors: string[] }> {
   const users = await prisma.user.findMany({
-    where: { refreshToken: { not: null } },
-    select: { id: true, refreshToken: true },
+    where: {
+      OR: [
+        { refreshToken: { not: null } },
+        { accessToken: { not: null } },
+      ],
+    },
+    select: { id: true, accessToken: true, refreshToken: true, tokenExpiresAt: true },
   });
 
   let totalSynced = 0;
   const allErrors: string[] = [];
 
   for (const user of users) {
+    let accessToken: string;
+
+    // Step 1: Refresh token — failures here mean the chain is broken
+    if (user.refreshToken) {
+      try {
+        accessToken = await refreshUserToken(user.id, user.refreshToken);
+      } catch (e) {
+        // Token chain is broken — null out refresh token so we stop retrying
+        // and UI can show "needs re-auth"
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { refreshToken: null },
+        });
+        allErrors.push(`[${user.id}] token: ${e instanceof Error ? e.message : String(e)}`);
+        continue;
+      }
+    } else if (user.accessToken && user.tokenExpiresAt && user.tokenExpiresAt > new Date()) {
+      accessToken = user.accessToken;
+    } else if (user.accessToken) {
+      accessToken = user.accessToken;
+    } else {
+      allErrors.push(`[${user.id}] no valid token`);
+      continue;
+    }
+
+    // Step 2: Sync data — errors here do NOT invalidate tokens
     try {
-      const accessToken = await refreshUserToken(user.id, user.refreshToken!);
       const result = await syncUserData(user.id, accessToken, fullSync);
       totalSynced += result.synced;
       allErrors.push(...result.errors.map(e => `[${user.id}] ${e}`));
     } catch (e) {
-      allErrors.push(`[${user.id}] token: ${e instanceof Error ? e.message : String(e)}`);
+      allErrors.push(`[${user.id}] sync: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
