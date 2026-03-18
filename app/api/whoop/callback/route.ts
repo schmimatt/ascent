@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSession, sessionCookie } from "@/lib/auth";
+import { syncUserData } from "@/lib/sync";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -130,6 +131,13 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       console.error("Failed to persist refresh token:", e);
     }
+  }
+
+  // Sync user's Whoop data immediately after login
+  try {
+    await syncUserData(user.id, tokens.access_token);
+  } catch (e) {
+    console.error("Post-login sync failed:", e);
   }
 
   // Create session JWT
