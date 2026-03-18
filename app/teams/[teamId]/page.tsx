@@ -25,8 +25,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import TeamCompare from "@/components/TeamCompare";
-import { ArrowLeft, Copy, Check, Users, Trash2, LogOut } from "lucide-react";
+import TeamCompare, { getToday, addDays, formatDate } from "@/components/TeamCompare";
+import { ArrowLeft, Copy, Check, Users, Trash2, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TeamDetails {
   id: string;
@@ -51,6 +51,14 @@ export default function TeamPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
   const [syncStatus, setSyncStatus] = useState<Record<string, { needsReauth: boolean; lastDataDate: string | null }>>({});
+  const [selectedDate, setSelectedDate] = useState(getToday());
+
+  const goBack = () => setSelectedDate(prev => addDays(prev, -1));
+  const goForward = () => {
+    const next = addDays(selectedDate, 1);
+    if (next <= getToday()) setSelectedDate(next);
+  };
+  const isToday = selectedDate === getToday();
 
   useEffect(() => {
     fetch(`/api/teams/${teamId}`)
@@ -154,9 +162,20 @@ export default function TeamPage() {
                   <div className="space-y-3 mt-2">
                     {members.map(m => {
                       const status = syncStatus[m.id];
-                      const isStale = status?.lastDataDate
-                        ? (Date.now() - new Date(status.lastDataDate).getTime()) > 2 * 86400000
-                        : true;
+                      const lastDate = status?.lastDataDate;
+                      let syncLabel = "";
+                      if (status?.needsReauth) {
+                        syncLabel = "";
+                      } else if (lastDate) {
+                        const diffMs = Date.now() - new Date(lastDate).getTime();
+                        const diffH = Math.floor(diffMs / 3600000);
+                        if (diffH < 1) syncLabel = "Last sync: less than 1h ago";
+                        else if (diffH < 24) syncLabel = `Last sync: ${diffH}h ago`;
+                        else {
+                          const diffD = Math.floor(diffH / 24);
+                          syncLabel = `Last sync: ${diffD}d ago (${new Date(lastDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`;
+                        }
+                      }
 
                       return (
                         <div key={m.id} className="flex items-center justify-between py-1.5">
@@ -168,18 +187,17 @@ export default function TeamPage() {
                               <span className="text-sm font-medium">
                                 {m.first_name} {m.last_name?.charAt(0)}.
                               </span>
-                              {status && status.needsReauth && (
+                              {status && status.needsReauth ? (
                                 <p className="flex items-center gap-1 text-[10px] text-red-500">
                                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
                                   Needs to re-authenticate
                                 </p>
-                              )}
-                              {status && !status.needsReauth && !isStale && (
-                                <p className="flex items-center gap-1 text-[10px] text-green-500">
+                              ) : syncLabel ? (
+                                <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                                  Syncing
+                                  {syncLabel}
                                 </p>
-                              )}
+                              ) : null}
                             </div>
                           </div>
                           <Badge variant="secondary" className="text-[10px]">{m.role}</Badge>
@@ -206,7 +224,29 @@ export default function TeamPage() {
               </Dialog>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Date navigation */}
+              <div className="flex items-center gap-1.5">
+                <Button variant="ghost" size="sm" onClick={goBack} className="h-7 w-7 p-0">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  max={getToday()}
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="w-auto h-7 text-xs font-medium px-2"
+                />
+                <Button variant="ghost" size="sm" onClick={goForward} disabled={isToday} className="h-7 w-7 p-0">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                {!isToday && (
+                  <Button variant="outline" size="sm" onClick={() => setSelectedDate(getToday())} className="h-7 text-xs px-2">
+                    Today
+                  </Button>
+                )}
+              </div>
+
               {role === "owner" ? (
                 <AlertDialog>
                   <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
@@ -254,7 +294,7 @@ export default function TeamPage() {
           </div>
 
           {/* Comparison dashboard */}
-          <TeamCompare teamId={teamId} />
+          <TeamCompare teamId={teamId} selectedDate={selectedDate} />
         </div>
       </main>
     </>

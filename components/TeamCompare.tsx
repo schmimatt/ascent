@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -12,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import type { MemberComparison } from "@/app/api/teams/[teamId]/compare/route";
 
 function getRecoveryColor(score: number) {
@@ -239,16 +236,17 @@ function TrendOverlay({
   );
 }
 
-export default function TeamCompare({ teamId }: { teamId: string }) {
+export { getToday, addDays, formatDate };
+
+export default function TeamCompare({ teamId, selectedDate }: { teamId: string; selectedDate: string }) {
   const [members, setMembers] = useState<MemberComparison[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(getToday());
 
-  const fetchData = (date: string) => {
+  useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`/api/teams/${teamId}/compare?date=${date}`)
+    fetch(`/api/teams/${teamId}/compare?date=${selectedDate}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) {
@@ -259,19 +257,7 @@ export default function TeamCompare({ teamId }: { teamId: string }) {
       })
       .catch(() => setError("Failed to load comparison data"))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchData(selectedDate);
   }, [teamId, selectedDate]);
-
-  const goBack = () => setSelectedDate(prev => addDays(prev, -1));
-  const goForward = () => {
-    const next = addDays(selectedDate, 1);
-    if (next <= getToday()) setSelectedDate(next);
-  };
-  const goToday = () => setSelectedDate(getToday());
-  const isToday = selectedDate === getToday();
 
   if (error) {
     return <p className="text-center text-muted-foreground py-10">{error}</p>;
@@ -283,38 +269,6 @@ export default function TeamCompare({ teamId }: { teamId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Date picker */}
-      <Card>
-        <CardContent className="py-3">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={goBack}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="date"
-                value={selectedDate}
-                max={getToday()}
-                onChange={e => setSelectedDate(e.target.value)}
-                className="w-auto text-sm font-medium"
-              />
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                {formatDate(selectedDate)}
-              </span>
-              {!isToday && (
-                <Button variant="outline" size="sm" onClick={goToday}>
-                  Today
-                </Button>
-              )}
-            </div>
-            <Button variant="ghost" size="sm" onClick={goForward} disabled={isToday}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
