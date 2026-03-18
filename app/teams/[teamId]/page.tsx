@@ -4,13 +4,29 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import TeamCompare from "@/components/TeamCompare";
-import { ArrowLeft, Copy, Check, Users, Trash2, LogOut, Link2 } from "lucide-react";
+import { ArrowLeft, Copy, Check, Users, Trash2, LogOut } from "lucide-react";
 
 interface TeamDetails {
   id: string;
@@ -77,13 +93,11 @@ export default function TeamPage() {
   };
 
   const leaveTeam = async () => {
-    if (!confirm("Leave this team?")) return;
     await fetch(`/api/teams/${teamId}/leave`, { method: "POST" });
     router.push("/teams");
   };
 
   const deleteTeam = async () => {
-    if (!confirm("Delete this team? This cannot be undone.")) return;
     await fetch(`/api/teams/${teamId}`, { method: "DELETE" });
     router.push("/teams");
   };
@@ -126,98 +140,118 @@ export default function TeamPage() {
                 All Teams
               </Link>
               <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {members.length} member{members.length !== 1 ? "s" : ""}
-              </p>
+
+              {/* Clickable member count → opens members modal */}
+              <Dialog>
+                <DialogTrigger className="text-sm text-primary hover:text-primary/80 transition-colors mt-1 underline underline-offset-2 decoration-primary/30 cursor-pointer">
+                  <Users className="h-3.5 w-3.5 inline mr-1 -mt-0.5" />
+                  {members.length} member{members.length !== 1 ? "s" : ""}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Members</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 mt-2">
+                    {members.map(m => {
+                      const status = syncStatus[m.id];
+                      const isStale = status?.lastDataDate
+                        ? (Date.now() - new Date(status.lastDataDate).getTime()) > 2 * 86400000
+                        : true;
+
+                      return (
+                        <div key={m.id} className="flex items-center justify-between py-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                              {m.first_name?.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium">
+                                {m.first_name} {m.last_name?.charAt(0)}.
+                              </span>
+                              {status && status.needsReauth && (
+                                <p className="flex items-center gap-1 text-[10px] text-red-500">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                                  Needs to re-authenticate
+                                </p>
+                              )}
+                              {status && !status.needsReauth && !isStale && (
+                                <p className="flex items-center gap-1 text-[10px] text-green-500">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                                  Syncing
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="text-[10px]">{m.role}</Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Invite section inside modal */}
+                  <div className="border-t border-border pt-4 mt-4">
+                    <p className="text-xs text-muted-foreground mb-2">Invite new members</p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        readOnly
+                        value={typeof window !== "undefined" ? `${window.location.origin}/api/auth/login?invite=${team.invite_code}` : ""}
+                        className="font-mono text-xs"
+                      />
+                      <Button variant="outline" size="sm" onClick={copyInviteLink}>
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
+
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowInvite(!showInvite)}>
-                <Link2 className="h-4 w-4 mr-1" />
-                Invite
-              </Button>
               {role === "owner" ? (
-                <Button variant="destructive" size="sm" onClick={deleteTeam}>
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete team</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete <strong>{team.name}</strong>? This will remove all members and cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteTeam} variant="destructive">
+                        Delete team
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : (
-                <Button variant="destructive" size="sm" onClick={leaveTeam}>
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Leave
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
+                    <LogOut className="h-4 w-4 mr-1" />
+                    Leave
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Leave team</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to leave <strong>{team.name}</strong>?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={leaveTeam} variant="destructive">
+                        Leave team
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           </div>
-
-          {/* Invite panel */}
-          {showInvite && (
-            <Card className="mb-6">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Invite Link</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    value={typeof window !== "undefined" ? `${window.location.origin}/api/auth/login?invite=${team.invite_code}` : ""}
-                    className="font-mono text-xs"
-                  />
-                  <Button variant="outline" size="sm" onClick={copyInviteLink}>
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Share this link. New users will sign in with Whoop and auto-join this team.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Members */}
-          <Card className="mb-6">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Members
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {members.map(m => {
-                  const status = syncStatus[m.id];
-                  const isStale = status?.lastDataDate
-                    ? (Date.now() - new Date(status.lastDataDate).getTime()) > 2 * 86400000
-                    : true;
-
-                  return (
-                    <div key={m.id} className="flex items-center justify-between py-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                          {m.first_name?.charAt(0)}
-                        </div>
-                        <span className="text-sm font-medium">
-                          {m.first_name} {m.last_name?.charAt(0)}.
-                        </span>
-                        {status && (
-                          status.needsReauth ? (
-                            <span className="flex items-center gap-1 text-[10px] text-red-500">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                              Needs to re-authenticate
-                            </span>
-                          ) : !isStale ? (
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" title="Syncing" />
-                          ) : null
-                        )}
-                      </div>
-                      <Badge variant="secondary" className="text-[10px]">{m.role}</Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Separator className="my-6" />
 
           {/* Comparison dashboard */}
           <TeamCompare teamId={teamId} />
