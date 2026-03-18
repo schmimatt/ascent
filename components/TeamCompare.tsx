@@ -36,45 +36,61 @@ function addDays(dateStr: string, days: number) {
   return d.toISOString().split("T")[0];
 }
 
-function RecoveryRingSmall({ score, name, needsReauth }: { score: number; name: string; needsReauth?: boolean }) {
-  const radius = 36;
+function MetricRing({ value, maxValue, label, color, unit }: { value: number | null; maxValue: number; label: string; color: string; unit: string }) {
+  const radius = 28;
   const circumference = 2 * Math.PI * radius;
+  const pct = value != null ? Math.min(value / maxValue, 1) : 0;
+  const offset = circumference - pct * circumference;
+  const display = value != null
+    ? (Number.isInteger(value) ? `${value}${unit}` : `${value.toFixed(1)}${unit}`)
+    : "—";
 
-  if (needsReauth) {
+  return (
+    <div className="flex flex-col items-center">
+      <svg width="68" height="68" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="5" />
+        {value != null && (
+          <circle
+            cx="32" cy="32" r={radius} fill="none" stroke={color} strokeWidth="5"
+            strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
+            transform="rotate(-90 32 32)"
+          />
+        )}
+        <text x="32" y="34" textAnchor="middle" fill={value != null ? color : "var(--color-muted-foreground)"} fontSize="13" fontWeight="700">
+          {display}
+        </text>
+      </svg>
+      <span className="text-[10px] text-muted-foreground mt-0.5">{label}</span>
+    </div>
+  );
+}
+
+function MemberMetrics({ member }: { member: MemberComparison }) {
+  if (member.needsReauth) {
     return (
-      <div className="flex flex-col items-center gap-1.5">
-        <svg width="90" height="90" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="6" />
-          <text x="40" y="42" textAnchor="middle" fill="var(--color-muted-foreground)" fontSize="18" fontWeight="700">
-            ?
-          </text>
-        </svg>
-        <span className="text-xs font-medium truncate max-w-[80px]">{name}</span>
+      <div className="flex flex-col items-center gap-2 px-3">
+        <div className="flex gap-2">
+          <MetricRing value={null} maxValue={100} label="Recovery" color="#44b700" unit="%" />
+          <MetricRing value={null} maxValue={12} label="Sleep" color="#6366f1" unit="h" />
+          <MetricRing value={null} maxValue={21} label="Strain" color="#a855f7" unit="" />
+        </div>
+        <span className="text-xs font-medium">{member.firstName}</span>
         <span className="text-[10px] text-red-500">Re-auth needed</span>
       </div>
     );
   }
 
-  const offset = circumference - (score / 100) * circumference;
-  const color = getRecoveryColor(score);
+  const recoveryScore = member.recovery?.score ?? null;
+  const recoveryColor = getRecoveryColor(recoveryScore ?? 0);
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <svg width="90" height="90" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="6" />
-        <circle
-          cx="40" cy="40" r={radius} fill="none" stroke={color} strokeWidth="6"
-          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          transform="rotate(-90 40 40)"
-        />
-        <text x="40" y="38" textAnchor="middle" fill={color} fontSize="18" fontWeight="700">
-          {score}%
-        </text>
-        <text x="40" y="52" textAnchor="middle" fill="var(--color-muted-foreground)" fontSize="8">
-          RECOVERY
-        </text>
-      </svg>
-      <span className="text-xs font-medium truncate max-w-[80px]">{name}</span>
+    <div className="flex flex-col items-center gap-2 px-3">
+      <div className="flex gap-2">
+        <MetricRing value={recoveryScore} maxValue={100} label="Recovery" color={recoveryColor} unit="%" />
+        <MetricRing value={member.sleep?.totalHours ?? null} maxValue={12} label="Sleep" color="#6366f1" unit="h" />
+        <MetricRing value={member.strain?.score ?? null} maxValue={21} label="Strain" color="#a855f7" unit="" />
+      </div>
+      <span className="text-xs font-medium">{member.firstName}</span>
     </div>
   );
 }
@@ -270,58 +286,19 @@ export default function TeamCompare({ teamId }: { teamId: string }) {
         <p className="text-center text-muted-foreground py-10">No member data yet. Members need to sync their Whoop data.</p>
       ) : (
         <>
-          {/* Recovery rings */}
+          {/* Member metrics — recovery, sleep, strain rings per person */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Recovery Comparison</CardTitle>
+              <CardTitle className="text-sm">Daily Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap justify-center gap-6">
                 {leaderboard.map(m => (
-                  <RecoveryRingSmall
-                    key={m.userId}
-                    score={m.recovery?.score ?? 0}
-                    name={m.firstName}
-                    needsReauth={m.needsReauth}
-                  />
+                  <MemberMetrics key={m.userId} member={m} />
                 ))}
               </div>
             </CardContent>
           </Card>
-
-          {/* Sleep + Strain bars */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Sleep Hours</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CompareBar
-                  members={members}
-                  getValue={m => m.sleep?.totalHours ?? null}
-                  getLabel={m => m.firstName}
-                  maxValue={12}
-                  color="#6366f1"
-                  unit="h"
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Day Strain</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CompareBar
-                  members={members}
-                  getValue={m => m.strain?.score ?? null}
-                  getLabel={m => m.firstName}
-                  maxValue={21}
-                  color="#a855f7"
-                  unit=""
-                />
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Comprehensive Detail Table */}
           <Card>
