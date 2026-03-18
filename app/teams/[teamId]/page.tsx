@@ -34,6 +34,7 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<Record<string, { needsReauth: boolean; lastDataDate: string | null }>>({});
 
   useEffect(() => {
     fetch(`/api/teams/${teamId}`)
@@ -50,6 +51,22 @@ export default function TeamPage() {
       .catch(() => router.push("/teams"))
       .finally(() => setLoading(false));
   }, [teamId, router]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    fetch(`/api/teams/${teamId}/compare?date=${today}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.members) {
+          const status: Record<string, { needsReauth: boolean; lastDataDate: string | null }> = {};
+          for (const m of data.members) {
+            status[m.userId] = { needsReauth: m.needsReauth, lastDataDate: m.lastDataDate };
+          }
+          setSyncStatus(status);
+        }
+      })
+      .catch(() => {});
+  }, [teamId]);
 
   const copyInviteLink = () => {
     if (!team) return;
@@ -166,19 +183,36 @@ export default function TeamPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {members.map(m => (
-                  <div key={m.id} className="flex items-center justify-between py-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                        {m.first_name?.charAt(0)}
+                {members.map(m => {
+                  const status = syncStatus[m.id];
+                  const isStale = status?.lastDataDate
+                    ? (Date.now() - new Date(status.lastDataDate).getTime()) > 2 * 86400000
+                    : true;
+
+                  return (
+                    <div key={m.id} className="flex items-center justify-between py-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                          {m.first_name?.charAt(0)}
+                        </div>
+                        <span className="text-sm font-medium">
+                          {m.first_name} {m.last_name?.charAt(0)}.
+                        </span>
+                        {status && (
+                          status.needsReauth ? (
+                            <span className="flex items-center gap-1 text-[10px] text-red-500">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                              Needs to re-authenticate
+                            </span>
+                          ) : !isStale ? (
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" title="Syncing" />
+                          ) : null
+                        )}
                       </div>
-                      <span className="text-sm font-medium">
-                        {m.first_name} {m.last_name?.charAt(0)}.
-                      </span>
+                      <Badge variant="secondary" className="text-[10px]">{m.role}</Badge>
                     </div>
-                    <Badge variant="secondary" className="text-[10px]">{m.role}</Badge>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
