@@ -317,19 +317,25 @@ export async function syncAllUsers(fullSync = false): Promise<{ synced: number; 
   for (const user of users) {
     let accessToken: string;
 
-    // Step 1: Refresh token — failures here mean the chain is broken
+    // Step 1: Refresh token — always refresh to keep the chain alive
     if (user.refreshToken) {
       try {
         accessToken = await refreshUserToken(user.id, user.refreshToken);
       } catch (e) {
-        // Token chain is broken — null out refresh token so we stop retrying
-        // and UI can show "needs re-auth"
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { refreshToken: null },
-        });
-        allErrors.push(`[${user.id}] token: ${e instanceof Error ? e.message : String(e)}`);
-        continue;
+        // Retry once after a short delay — Whoop may have a transient error
+        try {
+          await new Promise(r => setTimeout(r, 2000));
+          accessToken = await refreshUserToken(user.id, user.refreshToken);
+        } catch (e2) {
+          // Token chain is broken — null out refresh token so we stop retrying
+          // and UI can show "needs re-auth"
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken: null },
+          });
+          allErrors.push(`[${user.id}] token: ${e2 instanceof Error ? e2.message : String(e2)}`);
+          continue;
+        }
       }
     } else if (user.accessToken && user.tokenExpiresAt && user.tokenExpiresAt > new Date()) {
       accessToken = user.accessToken;
