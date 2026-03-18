@@ -36,7 +36,7 @@ function addDays(dateStr: string, days: number) {
   return d.toISOString().split("T")[0];
 }
 
-function MetricRing({ value, maxValue, label, color, unit }: { value: number | null; maxValue: number; label: string; color: string; unit: string }) {
+function MetricRing({ value, maxValue, label, color, unit, isLeader }: { value: number | null; maxValue: number; label: string; color: string; unit: string; isLeader?: boolean }) {
   const radius = 28;
   const circumference = 2 * Math.PI * radius;
   const pct = value != null ? Math.min(value / maxValue, 1) : 0;
@@ -46,8 +46,18 @@ function MetricRing({ value, maxValue, label, color, unit }: { value: number | n
     : "—";
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center relative">
+      {isLeader && (
+        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[11px] leading-none" title="1st place">
+          <svg width="14" height="12" viewBox="0 0 14 12" fill="#f5a623">
+            <polygon points="7,0 9,4 14,4 10,7 11.5,12 7,9 2.5,12 4,7 0,4 5,4" />
+          </svg>
+        </div>
+      )}
       <svg width="68" height="68" viewBox="0 0 64 64">
+        {isLeader && (
+          <circle cx="32" cy="32" r={radius + 3} fill="none" stroke="#f5a623" strokeWidth="1.5" opacity="0.5" />
+        )}
         <circle cx="32" cy="32" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="5" />
         {value != null && (
           <circle
@@ -65,11 +75,38 @@ function MetricRing({ value, maxValue, label, color, unit }: { value: number | n
   );
 }
 
-function MemberMetrics({ member }: { member: MemberComparison }) {
+function getLeaders(members: MemberComparison[]) {
+  const active = members.filter(m => !m.needsReauth);
+
+  const bestRecovery = active.reduce<string | null>((best, m) => {
+    if (m.recovery?.score == null) return best;
+    const bestMember = active.find(a => a.userId === best);
+    if (!best || (bestMember?.recovery?.score ?? -1) < m.recovery.score) return m.userId;
+    return best;
+  }, null);
+
+  const bestSleep = active.reduce<string | null>((best, m) => {
+    if (m.sleep?.totalHours == null) return best;
+    const bestMember = active.find(a => a.userId === best);
+    if (!best || (bestMember?.sleep?.totalHours ?? -1) < m.sleep.totalHours) return m.userId;
+    return best;
+  }, null);
+
+  const bestStrain = active.reduce<string | null>((best, m) => {
+    if (m.strain?.score == null) return best;
+    const bestMember = active.find(a => a.userId === best);
+    if (!best || (bestMember?.strain?.score ?? -1) < m.strain.score) return m.userId;
+    return best;
+  }, null);
+
+  return { bestRecovery, bestSleep, bestStrain };
+}
+
+function MemberMetrics({ member, leaders }: { member: MemberComparison; leaders: { bestRecovery: string | null; bestSleep: string | null; bestStrain: string | null } }) {
   if (member.needsReauth) {
     return (
       <div className="flex flex-col items-center gap-2 px-3">
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-2.5">
           <MetricRing value={null} maxValue={100} label="Recovery" color="#44b700" unit="%" />
           <MetricRing value={null} maxValue={12} label="Sleep" color="#6366f1" unit="h" />
           <MetricRing value={null} maxValue={21} label="Strain" color="#a855f7" unit="" />
@@ -85,10 +122,10 @@ function MemberMetrics({ member }: { member: MemberComparison }) {
 
   return (
     <div className="flex flex-col items-center gap-2 px-3">
-      <div className="flex gap-2">
-        <MetricRing value={recoveryScore} maxValue={100} label="Recovery" color={recoveryColor} unit="%" />
-        <MetricRing value={member.sleep?.totalHours ?? null} maxValue={12} label="Sleep" color="#6366f1" unit="h" />
-        <MetricRing value={member.strain?.score ?? null} maxValue={21} label="Strain" color="#a855f7" unit="" />
+      <div className="flex gap-2 pt-2.5">
+        <MetricRing value={recoveryScore} maxValue={100} label="Recovery" color={recoveryColor} unit="%" isLeader={leaders.bestRecovery === member.userId} />
+        <MetricRing value={member.sleep?.totalHours ?? null} maxValue={12} label="Sleep" color="#6366f1" unit="h" isLeader={leaders.bestSleep === member.userId} />
+        <MetricRing value={member.strain?.score ?? null} maxValue={21} label="Strain" color="#a855f7" unit="" isLeader={leaders.bestStrain === member.userId} />
       </div>
       <span className="text-xs font-medium">{member.firstName}</span>
     </div>
@@ -292,11 +329,16 @@ export default function TeamCompare({ teamId }: { teamId: string }) {
               <CardTitle className="text-sm">Daily Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap justify-center gap-6">
-                {leaderboard.map(m => (
-                  <MemberMetrics key={m.userId} member={m} />
-                ))}
-              </div>
+              {(() => {
+                const leaders = getLeaders(members);
+                return (
+                  <div className="flex flex-wrap justify-center gap-6">
+                    {leaderboard.map(m => (
+                      <MemberMetrics key={m.userId} member={m} leaders={leaders} />
+                    ))}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
