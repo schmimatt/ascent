@@ -120,7 +120,8 @@ export async function GET(
 
         const [latestRecovery, latestSleep, latestCycle, workouts, recoveryHist, sleepHist, strainHist, lastData] = await Promise.all([
           prisma.recovery.findFirst({ where: dayFilter, orderBy: dayOrder }),
-          prisma.sleep.findFirst({ where: { ...dayFilter, nap: false }, orderBy: dayOrder }),
+          prisma.sleep.findFirst({ where: { ...dayFilter, nap: false }, orderBy: dayOrder })
+            .then(s => s ?? prisma.sleep.findFirst({ where: dayFilter, orderBy: dayOrder })),
           prisma.cycle.findFirst({ where: dayFilter, orderBy: dayOrder }),
           targetDate
             ? prisma.workout.findMany({ where: { userId, date: targetDate }, orderBy: { startTime: "asc" } })
