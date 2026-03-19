@@ -148,9 +148,10 @@ export async function GET(
           }),
         ]);
 
-        // Determine needsReauth
-        const hasRecentData = lastData && (Date.now() - lastData.date.getTime()) < 2 * 86400000;
-        const needsReauth = !m.user.refreshToken && !hasRecentData;
+        // Determine needsReauth — only true if no refresh token AND no valid access token AND no recent data
+        const hasRecentData = lastData && (Date.now() - lastData.date.getTime()) < 4 * 86400000;
+        const hasValidToken = m.user.tokenExpiresAt && m.user.tokenExpiresAt > new Date();
+        const needsReauth = !m.user.refreshToken && !hasValidToken && !hasRecentData;
 
         return {
           userId,
