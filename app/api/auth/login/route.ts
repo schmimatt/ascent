@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     client_id: process.env.WHOOP_CLIENT_ID!,
     response_type: "code",
     redirect_uri: `${baseUrl}/api/whoop/callback`,
-    scope: "read:recovery read:sleep read:workout read:cycles read:profile read:body_measurement",
+    scope: "offline read:recovery read:sleep read:workout read:cycles read:profile read:body_measurement",
     state,
   });
 
