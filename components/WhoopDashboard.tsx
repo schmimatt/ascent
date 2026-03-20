@@ -39,7 +39,7 @@ function RecoveryRing({ score }: { score: number }) {
           RECOVERY
         </text>
       </svg>
-      <p className="text-xs text-muted mt-1" style={{ color }}>{getRecoveryLabel(score)}</p>
+      <p className="text-xs text-muted-foreground mt-1" style={{ color }}>{getRecoveryLabel(score)}</p>
     </div>
   );
 }
@@ -64,12 +64,12 @@ function HrvSparkline({ data, current }: { data: { date: string; hrv: number }[]
 
   return (
     <div>
-      <p className="text-xs uppercase tracking-wider text-muted mb-3">Heart Rate Variability</p>
+      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Heart Rate Variability</p>
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-3xl font-bold">{current}</span>
         <span className="text-xs text-muted-foreground">ms (RMSSD)</span>
       </div>
-      <p className="text-xs text-muted mb-3">
+      <p className="text-xs text-muted-foreground mb-3">
         {values.length > 0 && `${values.length}-day avg: ${avg} ms · Range: ${min}–${max} ms`}
       </p>
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="w-full">
@@ -90,7 +90,7 @@ function HrvSparkline({ data, current }: { data: { date: string; hrv: number }[]
           );
         })}
       </svg>
-      <div className="flex justify-between text-[10px] text-muted mt-1">
+      <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
         {data.length > 0 && <span>{data[0].date.slice(5)}</span>}
         {data.length > 0 && <span>{data[data.length - 1].date.slice(5)}</span>}
       </div>
@@ -119,12 +119,12 @@ function SleepBar({ data }: { data: WhoopData["sleep"] }) {
         <span className="text-3xl font-bold">{totalSleep.toFixed(1)}</span>
         <span className="text-xs text-muted-foreground">hours of sleep</span>
       </div>
-      <div className="flex items-baseline gap-4 text-xs text-muted mb-4">
+      <div className="flex items-baseline gap-4 text-xs text-muted-foreground mb-4">
         <span>{data.totalInBedHours.toFixed(1)}h total in bed</span>
         {data.sleepPerformance != null && <span>{Math.round(data.sleepPerformance)}% sleep performance</span>}
         {data.sleepConsistency != null && <span>{Math.round(data.sleepConsistency)}% consistency</span>}
       </div>
-      <p className="text-xs text-muted mb-2">Sleep Stages</p>
+      <p className="text-xs text-muted-foreground mb-2">Sleep Stages</p>
       <div className="flex rounded-full overflow-hidden h-5 gap-0.5">
         {stages.map((s) => (
           <div
@@ -191,7 +191,7 @@ function StrainGauge({ score, max, calories, avgHr }: { score: number; max: numb
 
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs uppercase tracking-wider text-muted mb-2">Day Strain</p>
+      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Day Strain</p>
       <svg width="160" height="130" viewBox="0 0 120 100">
         <path
           d={`M ${bgStart.x} ${bgStart.y} A ${radius} ${radius} 0 1 1 ${bgEnd.x} ${bgEnd.y}`}
@@ -229,8 +229,8 @@ function SleepHistory({ data }: { data: WhoopData["sleepHistory"] }) {
 
   return (
     <div>
-      <p className="text-xs uppercase tracking-wider text-muted mb-1">Sleep History</p>
-      <p className="text-[10px] text-muted mb-3">{data.length}-day avg: {avg}h</p>
+      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Sleep History</p>
+      <p className="text-[10px] text-muted-foreground mb-3">{data.length}-day avg: {avg}h</p>
       <div className="flex items-end gap-1.5 h-20">
         {data.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d.totalHours.toFixed(1)}h — ${d.date}`}>
@@ -253,8 +253,8 @@ function RecoveryHistory({ data }: { data: WhoopData["recoveryHistory"] }) {
 
   return (
     <div>
-      <p className="text-xs uppercase tracking-wider text-muted mb-1">Recovery History</p>
-      <p className="text-[10px] text-muted mb-3">{data.length}-day avg: {avg}%</p>
+      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Recovery History</p>
+      <p className="text-[10px] text-muted-foreground mb-3">{data.length}-day avg: {avg}%</p>
       <div className="flex items-end gap-1.5 h-20">
         {data.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d.score}% — ${d.date}`}>
@@ -351,7 +351,7 @@ function WorkoutCard({ workout }: { workout: WhoopData["workouts"][number] }) {
       )}
       {workout.zones && totalZoneMin > 0 && (
         <div className="mt-3 pt-3 border-t border-border">
-          <p className="text-xs text-muted mb-2">Heart Rate Zones</p>
+          <p className="text-xs text-muted-foreground mb-2">Heart Rate Zones</p>
           <div className="flex rounded-full overflow-hidden h-3 gap-px">
             {zoneLabels.map((z) => {
               const val = workout.zones![z.key as keyof typeof workout.zones];
@@ -422,7 +422,7 @@ export default function WhoopDashboard() {
       <div className="grid md:grid-cols-3 gap-4">
         <AnimatedSection delay={0.1}>
           <div className="rounded-2xl bg-card border border-border p-6 flex flex-col items-center">
-            <p className="text-xs uppercase tracking-wider text-muted mb-2 self-start">Recovery Score</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2 self-start">Recovery Score</p>
             <RecoveryRing score={recovery.score} />
             <div className="mt-4 grid grid-cols-2 gap-4 w-full text-center">
               <div>
@@ -460,7 +460,7 @@ export default function WhoopDashboard() {
       <div className="grid md:grid-cols-3 gap-4">
         <AnimatedSection delay={0.4} className="md:col-span-2">
           <div className="rounded-2xl bg-card border border-border p-6">
-            <p className="text-xs uppercase tracking-wider text-muted mb-4">Last Night&apos;s Sleep</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Last Night&apos;s Sleep</p>
             <SleepBar data={sleep} />
           </div>
         </AnimatedSection>
@@ -486,20 +486,20 @@ export default function WhoopDashboard() {
       {/* Body metrics */}
       {body && (
         <AnimatedSection delay={0.6}>
-          <p className="text-xs uppercase tracking-wider text-muted mb-4">Body Measurements</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Body Measurements</p>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-2xl bg-card border border-border p-5 text-center">
-              <p className="text-xs text-muted mb-1">Height</p>
+              <p className="text-xs text-muted-foreground mb-1">Height</p>
               <p className="text-xl font-bold">{Math.floor(body.heightMeters * 3.28084)}&apos;{Math.round((body.heightMeters * 3.28084 % 1) * 12)}&quot;</p>
               <p className="text-xs text-muted-foreground">{Math.round(body.heightMeters * 100)} cm</p>
             </div>
             <div className="rounded-2xl bg-card border border-border p-5 text-center">
-              <p className="text-xs text-muted mb-1">Weight</p>
+              <p className="text-xs text-muted-foreground mb-1">Weight</p>
               <p className="text-xl font-bold">{Math.round(body.weightKg * 2.20462)} lbs</p>
               <p className="text-xs text-muted-foreground">{body.weightKg.toFixed(1)} kg</p>
             </div>
             <div className="rounded-2xl bg-card border border-border p-5 text-center">
-              <p className="text-xs text-muted mb-1">Max Heart Rate</p>
+              <p className="text-xs text-muted-foreground mb-1">Max Heart Rate</p>
               <p className="text-xl font-bold">{body.maxHeartRate}</p>
               <p className="text-xs text-muted-foreground">bpm</p>
             </div>
@@ -511,7 +511,7 @@ export default function WhoopDashboard() {
       {workouts.length > 0 && (
         <AnimatedSection delay={0.7}>
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted mb-4">Recent Workouts</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Recent Workouts</p>
             <div className="grid md:grid-cols-2 gap-4">
               {workouts.map((w, i) => (
                 <WorkoutCard key={i} workout={w} />
