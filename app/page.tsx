@@ -11,15 +11,15 @@ export default function Home() {
             Ascent
           </a>
           <div className="flex items-center gap-6">
-            <a href="/teams" className="text-xs text-muted hover:text-foreground transition-colors">
+            <a href="/teams" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Teams
             </a>
-            <a href="/privacy" className="text-xs text-muted hover:text-foreground transition-colors">
+            <a href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Privacy
             </a>
             <a
               href="https://matthewjamesschmidt.com"
-              className="text-xs text-muted hover:text-foreground transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               matthewjamesschmidt.com
             </a>
@@ -32,13 +32,13 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6">
           {/* Header */}
           <div className="mb-12">
-            <p className="text-sm uppercase tracking-[0.2em] text-muted mb-3">
+            <p className="text-sm uppercase tracking-[0.2em] text-muted-foregroundmb-3">
               Health Dashboard
             </p>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
               <span className="gradient-text">Ascent</span>
             </h1>
-            <p className="text-muted max-w-xl leading-relaxed">
+            <p className="text-muted-foregroundmax-w-xl leading-relaxed">
               Live biometrics tracked with{" "}
               <a
                 href="https://whoop.com"
@@ -59,14 +59,14 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border py-6">
         <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Matthew James Schmidt
           </p>
           <div className="flex items-center gap-4">
-            <a href="/privacy" className="text-xs text-muted hover:text-foreground transition-colors">
+            <a href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Privacy Policy
             </a>
-            <span className="text-xs text-muted">Powered by Whoop API</span>
+            <span className="text-xs text-muted-foreground">Powered by Whoop API</span>
           </div>
         </div>
       </footer>

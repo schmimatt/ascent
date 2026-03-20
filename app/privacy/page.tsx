@@ -13,7 +13,7 @@ export default function PrivacyPage() {
           <a href="/" className="text-lg font-semibold tracking-tight gradient-text">
             Ascent
           </a>
-          <a href="/" className="text-xs text-muted hover:text-foreground transition-colors">
+          <a href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             Dashboard
           </a>
         </div>
@@ -24,9 +24,9 @@ export default function PrivacyPage() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
             Privacy Policy
           </h1>
-          <p className="text-sm text-muted mb-12">Last updated: March 11, 2026</p>
+          <p className="text-sm text-muted-foregroundmb-12">Last updated: March 11, 2026</p>
 
-          <div className="space-y-8 text-muted leading-relaxed">
+          <div className="space-y-8 text-muted-foregroundleading-relaxed">
             <section>
               <h2 className="text-lg font-semibold text-foreground mb-3">Overview</h2>
               <p>
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
           <p className="text-xs text-muted">
             &copy; {new Date().getFullYear()} Matthew James Schmidt
           </p>
-          <a href="/" className="text-xs text-muted hover:text-foreground transition-colors">
+          <a href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             Back to Dashboard
           </a>
         </div>

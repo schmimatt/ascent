@@ -67,7 +67,7 @@ function HrvSparkline({ data, current }: { data: { date: string; hrv: number }[]
       <p className="text-xs uppercase tracking-wider text-muted mb-3">Heart Rate Variability</p>
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-3xl font-bold">{current}</span>
-        <span className="text-xs text-muted">ms (RMSSD)</span>
+        <span className="text-xs text-muted-foreground">ms (RMSSD)</span>
       </div>
       <p className="text-xs text-muted mb-3">
         {values.length > 0 && `${values.length}-day avg: ${avg} ms · Range: ${min}–${max} ms`}
@@ -117,7 +117,7 @@ function SleepBar({ data }: { data: WhoopData["sleep"] }) {
     <div>
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-3xl font-bold">{totalSleep.toFixed(1)}</span>
-        <span className="text-xs text-muted">hours of sleep</span>
+        <span className="text-xs text-muted-foreground">hours of sleep</span>
       </div>
       <div className="flex items-baseline gap-4 text-xs text-muted mb-4">
         <span>{data.totalInBedHours.toFixed(1)}h total in bed</span>
@@ -140,27 +140,27 @@ function SleepBar({ data }: { data: WhoopData["sleep"] }) {
         {stages.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-            <span className="text-xs text-muted">{s.key} — {s.value.toFixed(1)}h ({Math.round((s.value / data.totalInBedHours) * 100)}%)</span>
+            <span className="text-xs text-muted-foreground">{s.key} — {s.value.toFixed(1)}h ({Math.round((s.value / data.totalInBedHours) * 100)}%)</span>
           </div>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
         <div>
-          <p className="text-xs text-muted">Sleep Efficiency</p>
+          <p className="text-xs text-muted-foreground">Sleep Efficiency</p>
           <p className="font-semibold">{typeof data.efficiency === 'number' ? Math.round(data.efficiency) : data.efficiency}%</p>
         </div>
         {data.respiratoryRate != null && (
           <div>
-            <p className="text-xs text-muted">Respiratory Rate</p>
+            <p className="text-xs text-muted-foreground">Respiratory Rate</p>
             <p className="font-semibold">{typeof data.respiratoryRate === 'number' ? data.respiratoryRate.toFixed(1) : data.respiratoryRate} breaths/min</p>
           </div>
         )}
         <div>
-          <p className="text-xs text-muted">Sleep Cycles</p>
+          <p className="text-xs text-muted-foreground">Sleep Cycles</p>
           <p className="font-semibold">{data.sleepCycleCount}</p>
         </div>
         <div>
-          <p className="text-xs text-muted">Disturbances</p>
+          <p className="text-xs text-muted-foreground">Disturbances</p>
           <p className="font-semibold">{data.disturbanceCount}</p>
         </div>
       </div>
@@ -210,11 +210,11 @@ function StrainGauge({ score, max, calories, avgHr }: { score: number; max: numb
       </svg>
       <div className="mt-2 grid grid-cols-2 gap-4 w-full text-center">
         <div>
-          <p className="text-xs text-muted">Calories Burned</p>
+          <p className="text-xs text-muted-foreground">Calories Burned</p>
           <p className="font-semibold">{calories.toLocaleString()} kcal</p>
         </div>
         <div>
-          <p className="text-xs text-muted">Avg Heart Rate</p>
+          <p className="text-xs text-muted-foreground">Avg Heart Rate</p>
           <p className="font-semibold">{avgHr} bpm</p>
         </div>
       </div>
@@ -234,12 +234,12 @@ function SleepHistory({ data }: { data: WhoopData["sleepHistory"] }) {
       <div className="flex items-end gap-1.5 h-20">
         {data.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d.totalHours.toFixed(1)}h — ${d.date}`}>
-            <span className="text-[8px] text-muted">{d.totalHours.toFixed(1)}</span>
+            <span className="text-[8px] text-muted-foreground">{d.totalHours.toFixed(1)}</span>
             <div
               className="w-full rounded-t-sm bg-accent-start/70 transition-all"
               style={{ height: `${(d.totalHours / max) * 100}%` }}
             />
-            <span className="text-[9px] text-muted">{d.date.slice(8)}</span>
+            <span className="text-[9px] text-muted-foreground">{d.date.slice(8)}</span>
           </div>
         ))}
       </div>
@@ -258,7 +258,7 @@ function RecoveryHistory({ data }: { data: WhoopData["recoveryHistory"] }) {
       <div className="flex items-end gap-1.5 h-20">
         {data.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d.score}% — ${d.date}`}>
-            <span className="text-[8px] text-muted">{d.score}</span>
+            <span className="text-[8px] text-muted-foreground">{d.score}</span>
             <div
               className="w-full rounded-t-sm transition-all"
               style={{
@@ -267,7 +267,7 @@ function RecoveryHistory({ data }: { data: WhoopData["recoveryHistory"] }) {
                 opacity: 0.8,
               }}
             />
-            <span className="text-[9px] text-muted">{d.date.slice(8)}</span>
+            <span className="text-[9px] text-muted-foreground">{d.date.slice(8)}</span>
           </div>
         ))}
       </div>
@@ -314,36 +314,36 @@ function WorkoutCard({ workout }: { workout: WhoopData["workouts"][number] }) {
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="font-semibold text-base">{workout.sport}</p>
-          <p className="text-xs text-muted">{daysAgo(workout.start)} &middot; {formatDuration(workout.durationMinutes)}</p>
+          <p className="text-xs text-muted-foreground">{daysAgo(workout.start)} &middot; {formatDuration(workout.durationMinutes)}</p>
         </div>
         <div className="text-right">
           <p className="text-lg font-bold">{workout.strain.toFixed(1)}</p>
-          <p className="text-xs text-muted">workout strain</p>
+          <p className="text-xs text-muted-foreground">workout strain</p>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 text-center text-sm">
         <div>
-          <p className="text-xs text-muted">Avg Heart Rate</p>
+          <p className="text-xs text-muted-foreground">Avg Heart Rate</p>
           <p className="font-medium">{workout.avgHr} bpm</p>
         </div>
         <div>
-          <p className="text-xs text-muted">Max Heart Rate</p>
+          <p className="text-xs text-muted-foreground">Max Heart Rate</p>
           <p className="font-medium">{workout.maxHr} bpm</p>
         </div>
         <div>
-          <p className="text-xs text-muted">Calories Burned</p>
+          <p className="text-xs text-muted-foreground">Calories Burned</p>
           <p className="font-medium">{workout.calories} kcal</p>
         </div>
       </div>
       {dist && (
         <div className="mt-2 grid grid-cols-2 gap-3 text-center text-sm">
           <div>
-            <p className="text-xs text-muted">Distance</p>
+            <p className="text-xs text-muted-foreground">Distance</p>
             <p className="font-medium">{dist}</p>
           </div>
           {workout.altitudeGainMeters != null && (
             <div>
-              <p className="text-xs text-muted">Elevation Gain</p>
+              <p className="text-xs text-muted-foreground">Elevation Gain</p>
               <p className="font-medium">{Math.round(workout.altitudeGainMeters)} m</p>
             </div>
           )}
@@ -372,7 +372,7 @@ function WorkoutCard({ workout }: { workout: WhoopData["workouts"][number] }) {
               return (
                 <div key={z.key} className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: z.color }} />
-                  <span className="text-[10px] text-muted">{z.label} {val}m</span>
+                  <span className="text-[10px] text-muted-foreground">{z.label} {val}m</span>
                 </div>
               );
             })}
@@ -407,12 +407,12 @@ export default function WhoopDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${source === "live" || source === "database" ? "bg-whoop-green" : "bg-whoop-yellow"}`} />
-          <span className="text-xs text-muted">
+          <span className="text-xs text-muted-foreground">
             {source === "live" || source === "database" ? "Live from Whoop" : source === "loading" ? "Loading..." : "Demo data"}
           </span>
         </div>
         {data.lastUpdated && (
-          <span className="text-xs text-muted">
+          <span className="text-xs text-muted-foreground">
             Last synced {new Date(data.lastUpdated).toLocaleString()}
           </span>
         )}
@@ -426,16 +426,16 @@ export default function WhoopDashboard() {
             <RecoveryRing score={recovery.score} />
             <div className="mt-4 grid grid-cols-2 gap-4 w-full text-center">
               <div>
-                <p className="text-xs text-muted">Resting Heart Rate</p>
+                <p className="text-xs text-muted-foreground">Resting Heart Rate</p>
                 <p className="font-semibold">{recovery.rhr} bpm</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Blood Oxygen</p>
+                <p className="text-xs text-muted-foreground">Blood Oxygen</p>
                 <p className="font-semibold">{recovery.spo2 != null ? `${typeof recovery.spo2 === 'number' ? recovery.spo2.toFixed(1) : recovery.spo2}%` : "—"}</p>
               </div>
               {recovery.skinTempFahrenheit != null && (
                 <div className="col-span-2">
-                  <p className="text-xs text-muted">Skin Temperature</p>
+                  <p className="text-xs text-muted-foreground">Skin Temperature</p>
                   <p className="font-semibold">{recovery.skinTempFahrenheit}°F / {recovery.skinTempCelsius}°C</p>
                 </div>
               )}
@@ -491,17 +491,17 @@ export default function WhoopDashboard() {
             <div className="rounded-2xl bg-card border border-border p-5 text-center">
               <p className="text-xs text-muted mb-1">Height</p>
               <p className="text-xl font-bold">{Math.floor(body.heightMeters * 3.28084)}&apos;{Math.round((body.heightMeters * 3.28084 % 1) * 12)}&quot;</p>
-              <p className="text-xs text-muted">{Math.round(body.heightMeters * 100)} cm</p>
+              <p className="text-xs text-muted-foreground">{Math.round(body.heightMeters * 100)} cm</p>
             </div>
             <div className="rounded-2xl bg-card border border-border p-5 text-center">
               <p className="text-xs text-muted mb-1">Weight</p>
               <p className="text-xl font-bold">{Math.round(body.weightKg * 2.20462)} lbs</p>
-              <p className="text-xs text-muted">{body.weightKg.toFixed(1)} kg</p>
+              <p className="text-xs text-muted-foreground">{body.weightKg.toFixed(1)} kg</p>
             </div>
             <div className="rounded-2xl bg-card border border-border p-5 text-center">
               <p className="text-xs text-muted mb-1">Max Heart Rate</p>
               <p className="text-xl font-bold">{body.maxHeartRate}</p>
-              <p className="text-xs text-muted">bpm</p>
+              <p className="text-xs text-muted-foreground">bpm</p>
             </div>
           </div>
         </AnimatedSection>
