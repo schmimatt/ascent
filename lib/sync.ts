@@ -111,9 +111,7 @@ export async function syncUserData(
 
   // Sync recovery
   try {
-    const records = fullSync
-      ? await whoopFetchAll("/recovery", accessToken, params)
-      : (await whoopFetch("/recovery", accessToken, { ...params, limit: "25" })).records || [];
+    const records = await whoopFetchAll("/recovery", accessToken, params);
 
     for (const r of records as Array<{ score_state: string; created_at: string; score?: { recovery_score: number; hrv_rmssd_milli: number; resting_heart_rate: number; spo2_percentage?: number; skin_temp_celsius?: number; user_calibrating: boolean } }>) {
       if (r.score_state !== "SCORED" || !r.score) continue;
@@ -156,13 +154,11 @@ export async function syncUserData(
 
   // Sync sleep
   try {
-    const records = fullSync
-      ? await whoopFetchAll("/activity/sleep", accessToken, params)
-      : (await whoopFetch("/activity/sleep", accessToken, { ...params, limit: "25" })).records || [];
+    const records = await whoopFetchAll("/activity/sleep", accessToken, params);
 
     for (const s of records as Array<{ score_state: string; nap: boolean; start: string; end: string; score?: { stage_summary: { total_in_bed_time_milli: number; total_awake_time_milli: number; total_light_sleep_time_milli: number; total_rem_sleep_time_milli: number; total_slow_wave_sleep_time_milli: number; sleep_cycle_count: number; disturbance_count: number }; sleep_efficiency_percentage?: number; respiratory_rate?: number; sleep_performance_percentage?: number; sleep_consistency_percentage?: number } }>) {
       if (s.score_state !== "SCORED" || !s.score) continue;
-      const date = new Date(s.start.split("T")[0]);
+      const date = new Date(s.end.split("T")[0]);
       const st = s.score.stage_summary;
       const sleepData = {
         totalInBedHours: milliToHours(st.total_in_bed_time_milli),
@@ -195,9 +191,7 @@ export async function syncUserData(
 
   // Sync cycles
   try {
-    const records = fullSync
-      ? await whoopFetchAll("/cycle", accessToken, params)
-      : (await whoopFetch("/cycle", accessToken, { ...params, limit: "25" })).records || [];
+    const records = await whoopFetchAll("/cycle", accessToken, params);
 
     for (const c of records as Array<{ score_state: string; start: string; end?: string; score?: { strain: number; kilojoule: number; average_heart_rate: number; max_heart_rate: number } }>) {
       if (c.score_state !== "SCORED" || !c.score) continue;
@@ -225,9 +219,7 @@ export async function syncUserData(
 
   // Sync workouts
   try {
-    const records = fullSync
-      ? await whoopFetchAll("/activity/workout", accessToken, params)
-      : (await whoopFetch("/activity/workout", accessToken, { ...params, limit: "25" })).records || [];
+    const records = await whoopFetchAll("/activity/workout", accessToken, params);
 
     for (const w of records as Array<{ id: string; score_state: string; sport_name: string; start: string; end: string; score?: { strain: number; average_heart_rate: number; max_heart_rate: number; kilojoule: number; distance_meter?: number; altitude_gain_meter?: number; zone_durations?: { zone_zero_milli: number; zone_one_milli: number; zone_two_milli: number; zone_three_milli: number; zone_four_milli: number; zone_five_milli: number } } }>) {
       if (w.score_state !== "SCORED" || !w.score) continue;
